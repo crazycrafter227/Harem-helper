@@ -1,0 +1,17 @@
+{
+  "name": "HaremHelper",
+  "version": "1.0.0",
+  "description": "Hell Harem's discord bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "author": "Erkki Madisson",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^12.4.1",
+    "mal-scraper": "^2.11.2",
+    "nodemon": "^2.0.4",
+    "request": "^2.88.2"
+  }
+}
