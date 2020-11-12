@@ -7,6 +7,13 @@ var creatortag = null
 var creator = null
 const search = malScraper.search
 const request = require('request')
+const mysql = require('mysql2')
+var db = mysql.createConnection({
+  host: config.host,
+  user: config.user,
+  password: config.password,
+  database: config.database,
+});
 
 // malScraper.getInfoFromName(name)
 //   .then((data) => console.log(data))
@@ -15,7 +22,7 @@ const request = require('request')
 // Create an event listener for new guild members
 client.on("guildMemberAdd", (member) => {
   // Creating a list of welcome messages what to send when someone joins the server
-  let welcomeMessages = [`Welcome to the server, ${member}`, `${member} Welcome to hell nya`, `${member} Be warned, I will seduce you, do not resist.`, `${member} welcome to the 9th layer of horny hell`, `${member} did you fall to hard? Welcome to hell`, `If u like creampie, you'll love your time here senpai. Welcome to Hell Harem ${member}`, `From things that will make u cum to things very wholesome, we got it all. Welcome to Hell Harem ${member}`]
+  let welcomeMessages = [`Welcome to the server, ${member}`, `${member} Welcome to hell nya`, `${member} Be warned, I will seduce you, do not resist.`, `${member} welcome to the 9th layer of horny hell`, `${member} did you fall too hard? Welcome to the hell`, `If u like creampie, you'll love your time here senpai. Welcome to Hell Harem ${member}`, `From things that will make u cum to things very wholesome, we got it all. Welcome to Hell Harem ${member}`]
   // Creating a variables for easier understanding of code
   const channel = member.guild.channels.cache.find(ch => ch.name === 'welcome');
   let role = member.guild.roles.cache.get("768098434632253440");
@@ -120,6 +127,68 @@ client.on("message", (msg) => {
       .setFooter(`Creator: ${creator.username}#${creator.discriminator}`, creator.avatarURL())
     msg.reply(profile)
   }
+  if(msg.content.startsWith(`${prefix}warn `)) {
+    if (!msg.member.hasPermission("KICK_MEMBERS")) return msg.channel.send("Invalid Permissions")
+    const command = `${prefix}warn`
+    var reason = undefined
+    if(!msg.mentions.everyone) {
+      if (msg.mentions.members.first(1)[0] == null || msg.mentions.members.first(1)[0] == undefined) {
+        embed = new discord.MessageEmbed()
+          .setTitle(`Invalid command usage`)
+          .setDescription(`You have to mention a person`)
+          .setFooter(`Creator: ${creator.tag}`, creator.avatarURL())
+        msg.channel.send(embed)
+      } else {
+        var mention = `<@!${msg.mentions.members.first(1)[0].id}>`
+        reason = msg.content.slice(command.length + mention.length + 1).trim()
+        if (reason == undefined) {
+            embed = new discord.MessageEmbed()
+              .setTitle(`Invalid command usage`)
+              .setDescription(`You have to give an reason`)
+              .setFooter(`Creator: ${creator.tag}`, creator.avatarURL())
+            msg.channel.send(embed)
+        } else {
+          db.query(`SELECT * FROM warnings WHERE warnings.ReciverID = ${msg.mentions.users.first(1)[0].id}`, (err, results) => {
+            if (err) throw err;
+            if (results[0] == undefined) {
+              db.query(`INSERT INTO \`warnings\` (\`WarningID\`, \`SenderID\`, \`ReciverID\`, \`Reason\`, \`WarningNum\`, \`WarningDate\`) VALUES (NULL, '${msg.author.id}', '${msg.mentions.users.first(1)[0].id}', '${reason}', '1', now());`, (err, results) => {
+                if (err) throw err;
+                msg.channel.send(`${msg.mentions.users.first(1)} has beed warned for reason "${reason}"`)
+              })
+            } else {
+              db.query(`INSERT INTO \`warnings\` (\`WarningID\`, \`SenderID\`, \`ReciverID\`, \`Reason\`, \`WarningNum\`, \`WarningDate\`) VALUES (NULL, '${msg.author.id}', '${msg.mentions.users.first(1)[0].id}', '${reason}', '${results[results.length -1].WarningNum + 1}', now());`, (err) => {
+                if (err) throw err;
+                msg.channel.send(`${msg.mentions.users.first(1)} has beed warned for reason "${reason}"`)
+
+                if (results[results.length -1].WarningNum >= 5) {
+                  let User = msg.guild.member(msg.mentions.users.first()) || msg.guild.members.get(args[0])
+                  db.query(`UPDATE warnings SET Archived = 1 WHERE ID = ${User.id}`, (err, results) => {
+                    User.kick({reason: "This is an automatic kick system you have gotten 5 warnings"})
+                      .catch((err) => {
+                        console.error("error:", err);
+                      })
+                  })
+                } else return;
+              });}
+            });
+        }
+      }
+
+    }
+  }
+
+  // if(msg.content.startsWith(`${prefix}warns`)) {
+  //   db.query(`SELECT * FROM warnings WHERE warnings.ReciverID = ${msg.mentions.users.first(1)[0].id}`, (err, results) => {
+  //     msg.channel.send(results)
+  //     const warnings = new discord.MessageEmbed()
+  //       .setTitle(`User's ${msg.mentions.users.first(1)} warnings:`)
+  //       .setFooter(`Creator: ${creatortag}`, creator.avatarURL())
+  //     for(let i = 0; i <= results.length -1; i++) {
+  //       warnings.setFields
+  //     }
+  //   })
+  // }
+
   // if(msg.content.startsWith(`${prefix}test`)) {
   //   request.get(options, (error, response, body) => {
   //       console.error('error:', error);
